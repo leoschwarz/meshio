@@ -60,6 +60,28 @@ def read_buffer(file):
 
     reader = _ItemReader(file)
 
+    meshio_from_medit = {
+        'Edges': ('line', 2),
+        'Triangles': ('triangle', 3),
+        'Quadrilaterals': ('quad', 4),
+        'Tetrahedra': ('tetra', 4),
+        'Hexahedra': ('hexahedra', 8)
+    }
+
+    # key = keyword, value = number of values per entry
+    ignored_fields = {
+        'Corners': 1,
+        'RequiredVertices': 1,
+        'Ridges': 1,
+        'RequiredEdges': 1,
+        'Normals': 3,
+        'Tangents': 3,
+        'NormalAtVertices': 2,
+        'NormalAtTriangleVertices': 3,
+        'NormalAtQuadrilateralVertices': 3,
+        'TangentAtEdges': 3,
+    }
+
     while True:
         try:
             keyword = reader.next_item()
@@ -67,14 +89,6 @@ def read_buffer(file):
             break
 
         assert keyword.isalpha()
-
-        meshio_from_medit = {
-            'Edges': ('line', 2),
-            'Triangles': ('triangle', 3),
-            'Quadrilaterals': ('quad', 4),
-            'Tetrahedra': ('tetra', 4),
-            'Hexahedra': ('hexahedra', 8)
-        }
 
         if keyword == 'MeshVersionFormatted':
             assert reader.next_item() == '1'
@@ -101,6 +115,11 @@ def read_buffer(file):
 
             # adapt 0-base
             cells[meshio_name] = cell_data - 1
+        elif keyword in ignored_fields:
+            print('Warning: Field {} currently ignored by meshio.'.format(keyword))
+            # Skip the values.
+            n_values = int(reader.next_item()) * ignored_fields[keyword]
+            reader.next_items(n_values)
         else:
             assert keyword == 'End', 'Unknown keyword \'{}\'.'.format(keyword)
 
