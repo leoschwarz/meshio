@@ -17,9 +17,9 @@ import numpy
 
 def read(filename):
     with open(filename) as f:
-        points, cells = read_buffer(f)
+        points, cells, point_data, cell_data = read_buffer(f)
 
-    return points, cells, {}, {}, {}
+    return points, cells, point_data, cell_data, {}
 
 
 class _ItemReader:
@@ -57,6 +57,8 @@ class _ItemReader:
 def read_buffer(file):
     dim = 0
     cells = {}
+    point_data = {}
+    cell_data = {}
 
     reader = _ItemReader(file)
 
@@ -99,22 +101,25 @@ def read_buffer(file):
             # The first value is the number of nodes
             num_verts = int(reader.next_item())
             points = numpy.empty((num_verts, dim), dtype=float)
+            point_data[0] = numpy.empty(num_verts, dtype=int)
             for k in range(num_verts):
-                # Throw away the label immediately
-                points[k] = numpy.array(
-                    reader.next_items(dim + 1), dtype=float)[:-1]
+                data = numpy.array(reader.next_items(dim + 1), dtype=float)
+                points[k] = data[:-1]
+                point_data[0][k] = data[-1]
         elif keyword in meshio_from_medit:
             meshio_name, num = meshio_from_medit[keyword]
             # The first value is the number of elements
             num_cells = int(reader.next_item())
-            cell_data = numpy.empty((num_cells, num), dtype=int)
+            cells[meshio_name] = numpy.empty((num_cells, num), dtype=int)
+            cell_data[meshio_name] = { 0: numpy.empty(num_cells, dtype=int) }
             for k in range(num_cells):
                 data = numpy.array(reader.next_items(num + 1), dtype=int)
-                # Throw away the label
-                cell_data[k] = data[:-1]
+                # Store cell values and cell labels.
+                cells[meshio_name][k] = data[:-1]
+                cell_data[meshio_name][0][k] = data[-1]
 
             # adapt 0-base
-            cells[meshio_name] = cell_data - 1
+            cells[meshio_name] -= 1
         elif keyword in ignored_fields:
             print('Warning: Field {} currently ignored by meshio.'.format(keyword))
             # Skip the values.
@@ -123,7 +128,7 @@ def read_buffer(file):
         else:
             assert keyword == 'End', 'Unknown keyword \'{}\'.'.format(keyword)
 
-    return points, cells
+    return points, cells, point_data, cell_data
 
 
 def write(filename,
@@ -147,7 +152,13 @@ def write(filename,
         # vertices
         fh.write(b'\nVertices\n')
         fh.write('{}\n'.format(len(points)).encode('utf-8'))
-        labels = numpy.ones(len(points), dtype=int)
+        if 0 in point_data:
+            labels = point_data[0]
+        elif point_data.keys():
+            assert len(point_data) == 1, 'Only 1-D labels supported.'
+            labels = list(point_data.values())[0]
+        else:
+            labels = numpy.ones(len(points), dtype=int)
         data = numpy.c_[points, labels]
         fmt = ' '.join(['%r'] * points.shape[1]) + ' %d'
         numpy.savetxt(fh, data, fmt)
@@ -171,7 +182,16 @@ def write(filename,
             fh.write(b'\n')
             fh.write('{}\n'.format(medit_name).encode('utf-8'))
             fh.write('{}\n'.format(len(data)).encode('utf-8'))
-            labels = numpy.ones(len(data), dtype=int)
+
+            if key in cell_data:
+                if 0 in cell_data[key]:
+                    labels = cell_data[key][0]
+                else:
+                    assert len(cell_data[key]) == 1, 'Only 1-D labels supported.'
+                    labels = list(cell_data[key].values())[0]
+            else:
+                labels = numpy.ones(len(data), dtype=int)
+
             # adapt 1-base
             data_with_label = numpy.c_[data + 1, labels]
             fmt = ' '.join(['%d'] * (num + 1))
