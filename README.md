@@ -1,5 +1,7 @@
 # meshio
 
+**INFO:** This is modified version of meshio 1.11.15.
+
 [![CircleCI](https://img.shields.io/circleci/project/github/nschloe/meshio/master.svg)](https://circleci.com/gh/nschloe/meshio)
 [![codecov](https://img.shields.io/codecov/c/github/nschloe/meshio.svg)](https://codecov.io/gh/nschloe/meshio)
 [![Codacy grade](https://img.shields.io/codacy/grade/dc23fe7f7d4540b0a405110b3ae97dc6.svg)](https://app.codacy.com/app/nschloe/meshio/dashboard)
