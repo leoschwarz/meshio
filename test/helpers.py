@@ -174,14 +174,22 @@ hex20_mesh = meshio.Mesh(
 )
 
 
-def add_point_data(mesh, dim, num_tags=2):
+def add_point_data(mesh, dim, num_tags=2, dtype=numpy.float32):
     numpy.random.seed(0)
     mesh2 = copy.deepcopy(mesh)
 
     if dim == 1:
-        data = [numpy.random.rand(len(mesh.points)) for _ in range(num_tags)]
+        shape = (len(mesh.points),)
     else:
-        data = [numpy.random.rand(len(mesh.points), dim) for _ in range(num_tags)]
+        shape = (len(mesh.points), dim)
+
+    dtype = numpy.dtype(dtype)
+    if dtype.kind == "i" or dtype.kind == "u":
+        # Signed and unsigned integer data types.
+        data = [numpy.random.randint(1e6, size=shape) for _ in range(num_tags)]
+    else:
+        # All other (floating point) data types.
+        data = [numpy.random.rand(*shape).astype(dtype) for _ in range(num_tags)]
 
     mesh2.point_data = {string.ascii_lowercase[k]: d for k, d in enumerate(data)}
     return mesh2

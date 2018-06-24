@@ -23,9 +23,15 @@ test_set = [
     helpers.add_point_data(helpers.tri_mesh, 1),
     helpers.add_point_data(helpers.tri_mesh, 2),
     helpers.add_point_data(helpers.tri_mesh, 3),
+    helpers.add_point_data(helpers.tri_mesh, 1, dtype=int),
+    helpers.add_point_data(helpers.tri_mesh, 2, dtype=int),
+    helpers.add_point_data(helpers.tri_mesh, 3, dtype=int),
     helpers.add_cell_data(helpers.tri_mesh, 1),
     helpers.add_cell_data(helpers.tri_mesh, 2),
     helpers.add_cell_data(helpers.tri_mesh, 3),
+    helpers.add_cell_data(helpers.tri_mesh, 1, dtype=int),
+    helpers.add_cell_data(helpers.tri_mesh, 2, dtype=int),
+    helpers.add_cell_data(helpers.tri_mesh, 3, dtype=int),
 ]
 
 
